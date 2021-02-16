@@ -24,6 +24,9 @@ ro.displayfeature.histogram.enable=false
 sys.displayfeature_hidl=true
 sys.displayfeature.entry.enable=true
 
+# Gboard configuration
+ro.com.google.ime.kb_pad_port_b=1
+
 # IPO
 sys.ipo.disable=1
 
