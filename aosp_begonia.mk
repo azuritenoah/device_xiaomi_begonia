@@ -20,6 +20,9 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/telephony_system_ext.mk)
 # Inherit from begonia device makefile
 $(call inherit-product, device/xiaomi/begonia/device.mk)
 
+# Private Extra Apps
+$(call inherit-product-if-exists, vendor/extra/config.mk)
+
 # Inherit some PE source stuff
 TARGET_BOOT_ANIMATION_RES := 1080
 $(call inherit-product, vendor/aosp/config/common_full_phone.mk)

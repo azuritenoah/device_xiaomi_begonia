@@ -120,5 +120,8 @@ PRODUCT_SOONG_NAMESPACES += $(DEVICE_PATH)
 BOARD_VNDK_RUNTIME_DISABLE := true
 PRODUCT_VENDOR_MOVE_ENABLED := true
 
+# Private Extra Apps
+-include vendor/extra/BoardConfigExtra.mk
+
 # Inherit from the proprietary version
 -include vendor/xiaomi/begonia/BoardConfigVendor.mk
