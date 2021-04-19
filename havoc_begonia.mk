@@ -45,8 +45,8 @@ PRODUCT_MODEL := Redmi Note 8 Pro
 PRODUCT_MANUFACTURER := Xiaomi
 
 # Fingerprint
-BUILD_FINGERPRINT := "google/redfin/redfin:11/RQ2A.210305.006/7119741:user/release-keys"
-BUILD_DESCRIPTION := "redfin-user 11 RQ2A.210305.006 7119741 release-keys"
+BUILD_FINGERPRINT := "google/redfin/redfin:11/RQ2A.210405.005/7181113:user/release-keys"
+BUILD_DESCRIPTION := "redfin-user 11 RQ2A.210405.005 7181113 release-keys"
 
 PRODUCT_BUILD_PROP_OVERRIDES += \
     PRIVATE_BUILD_DESC=$(BUILD_DESCRIPTION)
