@@ -1,0 +1,221 @@
+From 46de8febc479505150c54f81b0c7e2cdbd45aafe Mon Sep 17 00:00:00 2001
+From: Zinadin Zidan <zidan44@pixelexperience.org>
+Date: Sun, 27 Jun 2021 09:18:41 +0200
+Subject: [PATCH 2/2] media: Add set of mtk media infos type flags
+
+Signed-off-by: Zinadin Zidan <zidan44@pixelexperience.org>
+Change-Id: I381eeb076e2984725a128a111175d0f1f3abb48e
+---
+ media/libmedia/include/media/mediarecorder.h  | 18 +++++++++
+ .../StagefrightRecorder.cpp                   | 40 +++++++++++++++++++
+ .../StagefrightRecorder.h                     |  6 +++
+ media/libstagefright/MPEG4Writer.cpp          | 30 ++++++++++++++
+ .../include/media/stagefright/MetaDataBase.h  | 13 ++++++
+ 5 files changed, 107 insertions(+)
+
+diff --git a/media/libmedia/include/media/mediarecorder.h b/media/libmedia/include/media/mediarecorder.h
+index 6e2d94d71e..bbbcb4ddb5 100644
+--- a/media/libmedia/include/media/mediarecorder.h
++++ b/media/libmedia/include/media/mediarecorder.h
+@@ -212,7 +212,25 @@ enum media_recorder_info_type {
+     MEDIA_RECORDER_TRACK_INFO_DATA_KBYTES          = 1009,
+ 
+     MEDIA_RECORDER_TRACK_INFO_LIST_END             = 2000,
++
++    // add for mtk, set mtk added media infos.
++    MEDIA_RECORDER_INFO_RECORDING_SIZE             = 895,
++    MEDIA_RECORDER_INFO_START_TIMER                = 1998,
++    MEDIA_RECORDER_INFO_CAMERA_RELEASE             = 1999,
++    // end of add for mtk
++};
++
++// add for mtk, set mtk added media infos.
++/* add for mtk defined infos in mediarecorder.h.
++media recorder info flags, used to check if ap set the parameters,
++if set, then notify the mtk defined info messages.
++*/
++enum media_recorder_info_flag {
++    RECORDING_SIZE_FLAG        = 1,
++    START_TIMER_FLAG           = 1 << 5,
++    CAMERA_RELEASE_FLAG        = 1 << 6,
+ };
++// end of add for mtk
+ 
+ // ----------------------------------------------------------------------------
+ // ref-counted object for callbacks
+diff --git a/media/libmediaplayerservice/StagefrightRecorder.cpp b/media/libmediaplayerservice/StagefrightRecorder.cpp
+index a7344de402..0ee8ecd2e1 100644
+--- a/media/libmediaplayerservice/StagefrightRecorder.cpp
++++ b/media/libmediaplayerservice/StagefrightRecorder.cpp
+@@ -2242,6 +2242,10 @@ status_t StagefrightRecorder::reset() {
+ 
+     mOutputFd = -1;
+ 
++    // add for mtk defined infos in mediarecorder.h.
++    mMediaInfoFlag = 0;
++    // ~add for mtk
++
+     return OK;
+ }
+ 
+@@ -2419,4 +2423,40 @@ status_t StagefrightRecorder::dump(
+     ::write(fd, result.string(), result.size());
+     return OK;
+ }
++
++// add for mtk, mtk added interfaces
++status_t StagefrightRecorder::setParameterEx(const String8 &key, const String8 &value) {
++    /* add for mtk defined infos in mediarecorder.h. If ap set the parameter,
++       then return the related info, otherwise not notify the message.
++       This can avoid the third apps treat the mtk defined infos as err.
++    */
++    ALOGD("setParameter: key (%s) => value (%s)", key.string(), value.string());
++    if (key == "media-recorder-info") {
++        int32_t MediaRecorderInfo = 0;
++        if (safe_strtoi32(value.string(), &MediaRecorderInfo)) {
++            switch (MediaRecorderInfo) {
++                case 895:
++                    mMediaInfoFlag |= RECORDING_SIZE_FLAG;
++                    break;
++                case 1998:
++                    mMediaInfoFlag |= START_TIMER_FLAG;
++                    break;
++                case 1999:
++                    mMediaInfoFlag |= CAMERA_RELEASE_FLAG;
++                    break;
++                default:
++                    ALOGE(" set media-recorder-info bad value!!!");
++                    return BAD_VALUE;
++            }
++            return OK;
++        } else {
++            ALOGE(" set media-recorder-info failed!!!");
++            return BAD_VALUE;
++        }
++    } else {
++        ALOGE("setParameterEx: failed to find key %s", key.string());
++    }
++
++    return BAD_VALUE;
++}
+ }  // namespace android
+diff --git a/media/libmediaplayerservice/StagefrightRecorder.h b/media/libmediaplayerservice/StagefrightRecorder.h
+index a725bee64c..c936223c57 100644
+--- a/media/libmediaplayerservice/StagefrightRecorder.h
++++ b/media/libmediaplayerservice/StagefrightRecorder.h
+@@ -232,6 +232,12 @@ private:
+ 
+     StagefrightRecorder(const StagefrightRecorder &);
+     StagefrightRecorder &operator=(const StagefrightRecorder &);
++// add for mtk
++private:
++    // add for mtk defined infos in mediarecorder.h, notify infos set by ap only.
++    int32_t mMediaInfoFlag;
++    status_t setParameterEx(const String8 &key, const String8 &value);
++// end of add fot mtk
+ };
+ 
+ }  // namespace android
+diff --git a/media/libstagefright/MPEG4Writer.cpp b/media/libstagefright/MPEG4Writer.cpp
+index d99596e3f1..c25a4975ed 100644
+--- a/media/libstagefright/MPEG4Writer.cpp
++++ b/media/libstagefright/MPEG4Writer.cpp
+@@ -480,6 +480,11 @@ private:
+ 
+     Track(const Track &);
+     Track &operator=(const Track &);
++// add for mtk
++private:
++    int32_t     mMediaInfoFlag;  // add for mtk defined infos in mediarecorder.h.
++    int32_t     mSlowMotionSpeedTag;
++// ~add for mtk
+ };
+ 
+ MPEG4Writer::MPEG4Writer(int fd) {
+@@ -2114,6 +2119,8 @@ MPEG4Writer::Track::Track(
+             mIsPrimary = false;
+         }
+     }
++    mMediaInfoFlag = 0;  // add for mtk defined infos in mediarecorder.h.
++    mSlowMotionSpeedTag = 1;
+ }
+ 
+ // Clear all the internal states except the CSD data.
+@@ -2156,6 +2163,7 @@ void MPEG4Writer::Track::resetInternal() {
+         mElstTableEntries = new ListTableEntries<uint32_t, 3>(3);
+     }
+     mReachedEOS = false;
++    mMediaInfoFlag = 0;  // add for mtk defined infos in mediarecorder.h.
+ }
+ 
+ int64_t MPEG4Writer::Track::trackMetaDataSize() {
+@@ -2764,6 +2772,13 @@ status_t MPEG4Writer::Track::start(MetaData *params) {
+             params->findInt32(kKeyRotation, &rotationDegrees)) {
+         mRotation = rotationDegrees;
+     }
++    // add for mtk, add for mtk defined infos in mediarecorder.h.
++    int32_t mediainfoflag = 0;
++    if (params && params->findInt32(kKeyMediaInfoFlag, &mediainfoflag)) {
++        mMediaInfoFlag = mediainfoflag;
++    }
++    // end of add for mtk
++
+     if (mIsHeic) {
+         // Reserve the item ids, so that the item ids are ordered in the same
+         // order that the image tracks are added.
+@@ -2849,6 +2864,12 @@ status_t MPEG4Writer::Track::stop(bool stopSource) {
+         ALOGD("%s track source stopping", getTrackType());
+         mSource->stop();
+         ALOGD("%s track source stopped", getTrackType());
++        // add for mtk defined infos in mediarecorder.h.
++        if (mIsVideo && (mMediaInfoFlag & CAMERA_RELEASE_FLAG)) {
++            ALOGD("Notify camera release");
++            mOwner->notify(MEDIA_RECORDER_EVENT_INFO, MEDIA_RECORDER_INFO_CAMERA_RELEASE, 0);
++        }
++        // end of add for mtk
+     }
+ 
+     // Set mDone to be true after sucessfully stop mSource as mSource may be still outputting
+@@ -3501,6 +3522,15 @@ status_t MPEG4Writer::Track::threadEntry() {
+                 mOwner->setStartTimestampUs(timestampUs);
+                 mStartTimestampUs = timestampUs;
+                 previousPausedDurationUs = mStartTimestampUs;
++                // add for mtk defined infos in mediarecorder.h.
++                ALOGD("%s mStartTimestampUs=%" PRId64 "us", trackName, mStartTimestampUs);
++                if (mIsVideo) {
++                    if (mMediaInfoFlag & START_TIMER_FLAG) {
++                        ALOGD("notify start timer");
++                        mOwner->notify(MEDIA_RECORDER_EVENT_INFO, MEDIA_RECORDER_INFO_START_TIMER, 0);
++                    }
++                }
++                // end of add for mtk
+             }
+ 
+             if (mResumed) {
+diff --git a/media/libstagefright/include/media/stagefright/MetaDataBase.h b/media/libstagefright/include/media/stagefright/MetaDataBase.h
+index 64eb8b460c..0169a9ed76 100644
+--- a/media/libstagefright/include/media/stagefright/MetaDataBase.h
++++ b/media/libstagefright/include/media/stagefright/MetaDataBase.h
+@@ -264,6 +264,19 @@ enum {
+     kCryptoModeAesCbc      = 2,
+ };
+ 
++enum {
++    kKeyMediaInfoFlag = 'infg',  // add for mtk defined infos in mediarecorder.h.
++
++    // for ape seek
++    kKeynewframe = 'sfrm',
++    kKeyseekbyte = 'sebt',
++    // for wfd feature,
++    kKeyWFDLatency = 'wfdl',  // uint32_t
++    kKeyVideoTime = 'viti',  // uint32_t (msecs)
++    // for camera hal1 slowmotion
++    kKeySlowMotionTag    = 'slom',  // int32_t
++};
++
+ class Parcel;
+ 
+ class MetaDataBase {
+-- 
+2.33.0.windows.2
+

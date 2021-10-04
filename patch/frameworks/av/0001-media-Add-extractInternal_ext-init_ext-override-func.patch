@@ -1,0 +1,97 @@
+From 2cf3a6fb29edcfbb66698b7d584d8795554cf392 Mon Sep 17 00:00:00 2001
+From: Zinadin Zidan <zidan44@pixelexperience.org>
+Date: Sat, 26 Jun 2021 18:10:13 +0200
+Subject: [PATCH 1/2] media: Add extractInternal_ext & init_ext override
+ functions
+
+Signed-off-by: Zinadin Zidan <zidan44@pixelexperience.org>
+Change-Id: I042a40df01a50b79b5b603a46635078cbf6d6f15
+---
+ media/libstagefright/FrameDecoder.cpp       | 17 ++++++++++++++++-
+ media/libstagefright/include/FrameDecoder.h | 21 +++++++++++++++++++++
+ 2 files changed, 37 insertions(+), 1 deletion(-)
+
+diff --git a/media/libstagefright/FrameDecoder.cpp b/media/libstagefright/FrameDecoder.cpp
+index 734f5bb5ae..6d8ce10872 100644
+--- a/media/libstagefright/FrameDecoder.cpp
++++ b/media/libstagefright/FrameDecoder.cpp
+@@ -254,6 +254,14 @@ bool isHDR(const sp<AMessage> &format) {
+ 
+ status_t FrameDecoder::init(
+         int64_t frameTimeUs, int option, int colorFormat) {
++// HEIF ++
++    const char *mime;
++    CHECK(mTrackMeta->findCString(kKeyMIMEType, &mime));
++
++    if (!strcasecmp(mime, MEDIA_MIMETYPE_IMAGE_ANDROID_HEIC)) {
++        return init_ext(frameTimeUs, option, colorFormat);
++    }
++// HEIF --
+     if (!getDstColorFormat((android_pixel_format_t)colorFormat,
+             &mDstFormat, &mCaptureFormat, &mDstBpp)) {
+         return ERROR_UNSUPPORTED;
+@@ -305,7 +313,14 @@ status_t FrameDecoder::init(
+ sp<IMemory> FrameDecoder::extractFrame(FrameRect *rect) {
+     status_t err = onExtractRect(rect);
+     if (err == OK) {
+-        err = extractInternal();
++        const char *mime;
++        CHECK(mTrackMeta->findCString(kKeyMIMEType, &mime));
++
++        if (!strcasecmp(mime, MEDIA_MIMETYPE_IMAGE_ANDROID_HEIC)) {
++            err = extractInternal_ext();
++        } else {
++            err = extractInternal();
++        }
+     }
+     if (err != OK) {
+         return NULL;
+diff --git a/media/libstagefright/include/FrameDecoder.h b/media/libstagefright/include/FrameDecoder.h
+index 19ae0e3b1d..1b073cd973 100644
+--- a/media/libstagefright/include/FrameDecoder.h
++++ b/media/libstagefright/include/FrameDecoder.h
+@@ -75,6 +75,9 @@ protected:
+             int64_t timeUs,
+             bool *done) = 0;
+ 
++    virtual status_t extractInternal_ext() = 0;
++    virtual status_t init_ext(
++            int64_t frameTimeUs, int option, int colorFormat) = 0;
+     sp<MetaData> trackMeta()     const      { return mTrackMeta; }
+     OMX_COLOR_FORMATTYPE dstFormat() const  { return mDstFormat; }
+     ui::PixelFormat captureFormat() const   { return mCaptureFormat; }
+@@ -132,6 +135,15 @@ protected:
+             int64_t timeUs,
+             bool *done) override;
+ 
++    virtual status_t extractInternal_ext() override {
++        return ERROR_UNSUPPORTED;
++    }
++
++    virtual status_t init_ext(
++        int64_t frameTimeUs __unused,
++        int option __unused,
++        int colorFormat __unused) override { return ERROR_UNSUPPORTED;}
++
+ private:
+     sp<FrameCaptureLayer> mCaptureLayer;
+     VideoFrame *mFrame;
+@@ -172,6 +184,15 @@ protected:
+             int64_t timeUs,
+             bool *done) override;
+ 
++    virtual status_t extractInternal_ext() override {
++        return ERROR_UNSUPPORTED;
++    }
++
++    virtual status_t init_ext(
++        int64_t frameTimeUs __unused,
++        int option __unused,
++        int colorFormat __unused) override { return ERROR_UNSUPPORTED;}
++
+ private:
+     VideoFrame *mFrame;
+     int32_t mWidth;
+-- 
+2.33.0.windows.2
+
