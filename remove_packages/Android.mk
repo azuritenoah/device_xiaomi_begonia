@@ -1,0 +1,27 @@
+LOCAL_PATH := $(call my-dir)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := Remove_Packages
+LOCAL_MODULE_CLASS := APPS
+LOCAL_MODULE_TAGS := optional
+LOCAL_OVERRIDES_PACKAGES := AmbientSensePrebuilt
+LOCAL_OVERRIDES_PACKAGES += AndroidAutoStubPrebuilt
+LOCAL_OVERRIDES_PACKAGES += AppDirectedSMSService BetterBug
+LOCAL_OVERRIDES_PACKAGES += Camera2 CarrierSetup
+LOCAL_OVERRIDES_PACKAGES += CbrsNetworkMonitor
+LOCAL_OVERRIDES_PACKAGES += ConnMO DCMO DevicePolicyPrebuilt
+LOCAL_OVERRIDES_PACKAGES += DiagnosticsToolPrebuilt DMService
+LOCAL_OVERRIDES_PACKAGES += Drive GoogleCamera
+LOCAL_OVERRIDES_PACKAGES += HelpRtcPrebuilt Maps
+LOCAL_OVERRIDES_PACKAGES += MaestroPrebuilt MyVerizonServices
+LOCAL_OVERRIDES_PACKAGES += NgaResources
+LOCAL_OVERRIDES_PACKAGES += OBDM_Permissions OemDmTrigger
+LOCAL_OVERRIDES_PACKAGES += PrebuiltGmail
+LOCAL_OVERRIDES_PACKAGES += SafetyHubPrebuilt ScribePrebuilt Showcase
+LOCAL_OVERRIDES_PACKAGES += SoundAmplifierPrebuilt SprintDM
+LOCAL_OVERRIDES_PACKAGES += SprintHM Tycho USCCDM VZWAPNLib
+LOCAL_OVERRIDES_PACKAGES += VzwOmaTrigger arcore obdm_stub
+LOCAL_UNINSTALLABLE_MODULE := true
+LOCAL_CERTIFICATE := PRESIGNED
+LOCAL_SRC_FILES := /dev/null
+include $(BUILD_PREBUILT)

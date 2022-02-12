@@ -272,6 +272,10 @@ PRODUCT_PACKAGES += \
     PresencePolling \
     RcsService
 
+# Remove unwanted packages
+PRODUCT_PACKAGES += \
+    Remove_Packages
+
 # RenderScript
 PRODUCT_PACKAGES += \
     android.hardware.renderscript@1.0-impl
